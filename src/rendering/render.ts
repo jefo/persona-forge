@@ -1,0 +1,47 @@
+import type { BotPersona } from "../domain/bot-persona";
+import type { Form } from "../domain/form";
+
+export interface RenderedButton {
+	label: string;
+	event: string;
+}
+
+export interface RenderedMessage {
+	component: string;
+	text: string;
+	buttons: RenderedButton[];
+}
+
+const TEMPLATE = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+
+function fillTemplate(text: string, form: Form): string {
+	return text.replace(TEMPLATE, (_match, field: string) => {
+		const value = form.get(field);
+		return value === undefined ? "—" : String(value);
+	});
+}
+
+/**
+ * Turns a view node into a plain message. The renderer is deliberately
+ * separate from the engine: Telegram, console or a test can use the same
+ * RenderedMessage.
+ */
+export function renderMessage(
+	persona: BotPersona,
+	stateId: string,
+	form: Form,
+): RenderedMessage {
+	const node = persona.viewMap.getNode(stateId);
+	if (!node) {
+		throw new Error(`View node for state '${stateId}' is missing.`);
+	}
+
+	return {
+		component: node.component ?? "message",
+		text: fillTemplate(node.props.text, form),
+		buttons: (node.props.buttons ?? []).map((button) => ({
+			label: button.label,
+			event: button.event,
+		})),
+	};
+}

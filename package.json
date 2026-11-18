@@ -1,0 +1,20 @@
+{
+  "name": "persona-forge",
+  "version": "0.1.0",
+  "description": "Declarative engine for Telegram bots: FSM + view map + form",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/demo/appointment.ts",
+    "demo": "bun run src/demo/appointment.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.2"
+  }
+}

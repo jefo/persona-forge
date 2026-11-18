@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PersonaForge — case study</title><meta name="description" content="FSM, ViewMap и форма: бот описывается объектом, диалог — состояние и заполненная форма. Три бота-примера, CLI-демо и 47 тестов."><link rel="canonical" href="https://jefo.github.io/persona-forge/"><meta property="og:title" content="PersonaForge — case study"><meta property="og:description" content="FSM, ViewMap и форма: бот описывается объектом, диалог — состояние и заполненная форма. Три бота-примера, CLI-демо и 47 тестов."><meta property="og:type" content="article"><meta name="theme-color" content="#faf9f5"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E"><link rel="stylesheet" href="./assets/global.Bl4itOlZ.css"></head><body style="--accent: var(--type)"><a class="skip" href="#content">К содержанию</a><header class="site-header"><div class="shell header-inner"><a class="header-mark" href="https://github.com/jefo">jefo / case studies</a><nav class="header-nav" aria-label="Внешние ссылки"><a href="https://github.com/jefo/persona-forge">исходники</a><a href="https://github.com/jefo?tab=repositories">все репозитории</a></nav></div></header><div class="shell"><section class="hero" aria-labelledby="project-title"><div><h1 class="hero-title" id="project-title">PersonaForge</h1><p class="hero-lede">FSM, ViewMap и форма: бот описывается объектом, диалог — состояние и заполненная форма. Три бота-примера, CLI-демо и 47 тестов.</p><div class="hero-actions"><a class="button" href="https://github.com/jefo/persona-forge">Открыть исходники</a><a class="button button-secondary" href="#run">Как запустить</a></div></div><div class="spec" aria-label="Краткие факты"><div class="spec-row"><span class="spec-label">Состояние</span><span class="spec-value is-info">SDK, 47 тестов</span></div><div class="spec-row"><span class="spec-label">Роль</span><span class="spec-value is-info">движок, примеры, тесты</span></div><div class="spec-row"><span class="spec-label">Стек</span><span class="spec-value is-info">Bun · TypeScript · Zod</span></div><div class="spec-row"><span class="spec-label">Код</span><span class="spec-value is-info">1 319 строк TS</span></div><div class="spec-row"><span class="spec-label">Тесты</span><span class="spec-value is-info">47 pass · 111 expect</span></div><div class="spec-row"><span class="spec-label">ID</span><span class="spec-value mono" style="font-size:13px">pkg://persona-forge</span></div></div></section><main class="main" id="content"><aside class="rail"><div class="rail-title">На этой странице</div><nav class="rail-nav" aria-label="Содержание"><a href="#dialog" data-rail="dialog">Диалог</a><a href="#screens" data-rail="screens">Экраны</a><a href="#capabilities" data-rail="capabilities">Что умеет</a><a href="#architecture" data-rail="architecture">Как устроено</a><a href="#data" data-rail="data">Ограничения</a><a href="#run" data-rail="run">Запуск</a><a href="#next" data-rail="next">Дальше</a></nav></aside><article class="article"><section class="section" id="dialog" data-section><h2 class="section-title">Диалог</h2><div class="terminal" aria-label="bun run demo / persona-forge"><div class="terminal-head"><span>bun run demo / persona-forge</span><span>bun test · 47 тестов</span></div><div class="terminal-body"><div class="msg"><span class="msg-role system">system</span><p class="msg-text">$ bun run demo</p></div><div class="msg"><span class="msg-role bot">bot</span><p class="msg-text">Запись на приём
+
+Выберите услугу или отмените запись.</p></div><div class="msg"><span class="msg-role user">user</span><p class="msg-text">Записаться</p></div><div class="msg"><span class="msg-role bot">bot</span><p class="msg-text">Шаг 1 из 4. Выберите услугу:
+
+Консультация · Диагностика · Лечение</p></div><div class="msg"><span class="msg-role user">user</span><p class="msg-text">Консультация</p></div><div class="msg"><span class="msg-role system">system</span><p class="msg-text">→ имя → телефон → время</p></div><div class="msg"><span class="msg-role bot">bot</span><p class="msg-text">Проверьте запись.
+
+Услуга: Консультация
+Имя: Иван
+Телефон: +7 999 123-45-67
+Время: Завтра, 14:00</p></div><div class="msg"><span class="msg-role user">user</span><p class="msg-text">Подтвердить</p></div><div class="msg"><span class="msg-role bot">bot</span><p class="msg-text">Готово. Вы записаны.
+
+Консультация
+Завтра, 14:00</p></div><div class="msg-buttons" aria-label="Кнопки бота"><span class="msg-button">Записаться</span><span class="msg-button">Консультация</span><span class="msg-button">Диагностика</span><span class="msg-button">Лечение</span></div></div></div></section><section class="section" id="screens" data-section><h2 class="section-title">Экраны</h2><div class="shots"><figure class="shot"><img src="screens/persona-forge/01.png" alt="Старт бота записи на приём" width="840" height="1680"><figcaption><span class="shot-index">01</span>Старт</figcaption></figure><figure class="shot"><img src="screens/persona-forge/02.png" alt="Выбор услуги" width="840" height="1680"><figcaption><span class="shot-index">02</span>Услуга</figcaption></figure><figure class="shot"><img src="screens/persona-forge/03.png" alt="Подтверждение записи" width="840" height="1680"><figcaption><span class="shot-index">03</span>Подтверждение</figcaption></figure><figure class="shot"><img src="screens/persona-forge/04.png" alt="Готовая запись" width="840" height="1680"><figcaption><span class="shot-index">04</span>Готово</figcaption></figure></div></section><section class="section" id="capabilities" data-section><h2 class="section-title">Что умеет</h2><ul class="cap-list"><li>Бот — это FSM, ViewMap и форма, а не набор обработчиков.</li><li>Восемь инвариантов проверяют сценарий до запуска.</li><li>Переходы с assign из payload, формы или литерала.</li><li>Типизированная форма: string, number, boolean, defaults, required.</li><li>Сброс формы и автоматическое завершение в конечном состоянии.</li><li>Три бота-примера: запись, FAQ и меню ресторана.</li><li>Рендер в текст, кнопки и Telegram inline-клавиатуру.</li><li>47 тестов, включая полный сценарий записи.</li></ul></section><section class="section" id="architecture" data-section><h2 class="section-title">Как устроено</h2><div class="arch-grid"><div class="layers" aria-label="Слои"><div class="layer"><span class="layer-name">src/domain</span><span class="layer-detail">FSM, ViewMap, Form, BotPersona, Conversation</span></div><div class="layer"><span class="layer-name">src/application</span><span class="layer-detail">engine, use cases, порты репозиториев</span></div><div class="layer"><span class="layer-name">src/rendering</span><span class="layer-detail">шаблоны, кнопки, Telegram payload</span></div><div class="layer"><span class="layer-name">src/examples</span><span class="layer-detail">три бота как данные</span></div><div class="layer"><span class="layer-name">src/demo</span><span class="layer-detail">сценарный прогон записи</span></div></div><div><div class="code-head"><span>file tree</span><span>20 строк</span></div><pre class="code-block" aria-label="Структура проекта"><code><span class="tree-dir">src/</span>
+<span class="tree-dir">├── domain/</span>
+<span class="tree-file">│   ├── fsm.ts</span>
+<span class="tree-file">│   ├── view-map.ts</span>
+<span class="tree-file">│   ├── form.ts</span>
+<span class="tree-file">│   ├── bot-persona.ts</span>
+<span class="tree-file">│   └── conversation.ts</span>
+<span class="tree-dir">├── application/</span>
+<span class="tree-file">│   ├── engine.ts</span>
+<span class="tree-file">│   ├── use-cases.ts</span>
+<span class="tree-file">│   └── ports.ts</span>
+<span class="tree-dir">├── rendering/</span>
+<span class="tree-file">│   ├── render.ts</span>
+<span class="tree-file">│   └── telegram.ts</span>
+<span class="tree-dir">├── examples/</span>
+<span class="tree-file">│   ├── appointment-bot.ts</span>
+<span class="tree-file">│   ├── faq-bot.ts</span>
+<span class="tree-file">│   └── restaurant-bot.ts</span>
+<span class="tree-dir">└── demo/</span>
+<span class="tree-file">    └── appointment.ts</span></code></pre></div></div></section><section class="section" id="data" data-section><h2 class="section-title">Что реально, а что mock</h2><p class="section-lede">Ниже — фактическое состояние проекта. Всё, что помечено как mock или отсутствует, не выдаётся за готовую функцию.</p><table class="limits"><thead><tr><th scope="col">Пункт</th><th scope="col">Состояние</th></tr></thead><tbody><tr><td>Транспорт</td><td><span class="chip chip-info">ограничение</span> только payload, без polling и webhook</td></tr><tr><td>Хранилище</td><td><span class="chip chip-info">ограничение</span> in-memory, без базы</td></tr><tr><td>Типы формы</td><td><span class="chip chip-info">ограничение</span> runtime-валидация, не compile-time</td></tr><tr><td>Компоненты</td><td><span class="chip chip-info">ограничение</span> только текст и кнопки</td></tr><tr><td>Локализация</td><td><span class="chip chip-err">нет</span> нет, тексты в определениях</td></tr><tr><td>Аналитика</td><td><span class="chip chip-err">нет</span> нет воронки и метрик</td></tr></tbody></table><div class="note"><strong>Как читать таблицу.</strong> «Не готово» — реализации нет в репозитории. «Ограничение» — функция есть, но работает в узких рамках. Это проверяется по README и коду.</div></section><section class="section" id="run" data-section><h2 class="section-title">Запуск</h2><div class="arch-grid"><div><div class="code-head"><span>.env</span><button class="copy" type="button" data-copy="# переменные не нужны">копировать</button></div><pre class="code-block" aria-label="Переменные окружения"><code><span class="comment"># переменные не нужны</span></code></pre></div><div><div class="code-head"><span>terminal</span><button class="copy" type="button" data-copy="bun install
+bun test
+bun run demo">копировать</button></div><pre class="code-block" aria-label="Команды запуска"><code><span class="cmd">bun install</span>
+<span class="cmd">bun test</span>
+<span class="cmd">bun run demo</span></code></pre></div></div></section><section class="section" id="next" data-section><h2 class="section-title">Что дальше</h2><ol class="steps"><li>Telegram-адаптер: polling, callback-кнопки, текст как событие.</li><li>Postgres/Redis для определений и диалогов.</li><li>Компоненты: фото, документ, геолокация.</li><li>Локализация через каталог текстов.</li><li>Проверка обязательных полей перед финальным переходом.</li><li>Версионирование персон и миграции активных диалогов.</li></ol></section></article></main></div><footer class="site-footer"><div class="shell"><div class="footer-grid"><div><h2 class="footer-title">Другие проекты</h2><p class="footer-copy">Девять отдельных репозиториев. У каждого — свой README и эта страница. Исходники открыты, демо-данные помечены.</p></div><nav class="footer-links" aria-label="Другие проекты"><a href="https://jefo.github.io/computer-master-bot/"><span>Computer Master Bot</span><span>↗</span></a><a href="https://jefo.github.io/esim-telegram-bot/"><span>eSIM Telegram Bot</span><span>↗</span></a><a href="https://jefo.github.io/sales-report-bot/"><span>Sales Report Bot</span><span>↗</span></a><a href="https://jefo.github.io/prof-tinder-bot/"><span>Prof Tinder Bot</span><span>↗</span></a><a href="https://jefo.github.io/vpn-sales-bot/"><span>VPN Sales Bot</span><span>↗</span></a><a href="https://jefo.github.io/vpncity/"><span>VPN City</span><span>↗</span></a><a href="https://jefo.github.io/tg-lead-ai/"><span>TG Lead AI</span><span>↗</span></a><a href="https://jefo.github.io/booking-domain/"><span>Booking Domain</span><span>↗</span></a></nav></div><div class="footer-bottom"><span>PersonaForge · case study · 2026</span><span><a href="https://github.com/jefo/persona-forge">github.com/jefo/persona-forge</a></span></div></div></footer><script>
+      const railLinks = [...document.querySelectorAll('[data-rail]')];
+      const sections = railLinks
+        .map((link) => document.getElementById(link.dataset.rail))
+        .filter(Boolean);
+
+      if ('IntersectionObserver' in window && sections.length) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+            if (!visible) return;
+            for (const link of railLinks) {
+              if (link.dataset.rail === visible.target.id) {
+                link.setAttribute('aria-current', 'true');
+              } else {
+                link.removeAttribute('aria-current');
+              }
+            }
+          },
+          { rootMargin: '-18% 0px -62% 0px', threshold: [0, 0.1, 0.5] }
+        );
+        sections.forEach((section) => observer.observe(section));
+      }
+
+      for (const button of document.querySelectorAll('[data-copy]')) {
+        button.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy || '');
+            button.textContent = 'скопировано';
+            button.dataset.copied = 'true';
+            setTimeout(() => {
+              button.textContent = 'копировать';
+              delete button.dataset.copied;
+            }, 1600);
+          } catch {
+            button.textContent = 'выделите вручную';
+          }
+        });
+      }
+    </script></body></html>
