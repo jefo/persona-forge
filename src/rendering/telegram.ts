@@ -7,16 +7,6 @@ export interface TelegramMessage {
 	};
 }
 
-function encodeCallback(button: RenderedMessage["buttons"][number]): string {
-	if (!button.payload) return button.event;
-
-	const encoded = `${button.event}|${JSON.stringify(button.payload)}`;
-	if (Buffer.byteLength(encoded) > 64) {
-		throw new Error(`Telegram callback_data is too long for event '${button.event}'.`);
-	}
-	return encoded;
-}
-
 /**
  * Maps a rendered bot message to a Bot API payload. Kept as a pure
  * function so a screenshot script can capture the exact same payload
@@ -27,8 +17,16 @@ export function toTelegram(message: RenderedMessage): TelegramMessage {
 
 	if (message.buttons.length > 0) {
 		payload.reply_markup = {
-			inline_keyboard: message.buttons.map((button) => [
-				{ text: button.label, callback_data: encodeCallback(button) },
+			inline_keyboard: message.buttons.map((button, index) => [
+				{
+					text: button.label,
+					// Telegram limits callback_data to 64 bytes. A payload can
+					// contain Cyrillic, so send its index in the current screen
+					// instead of JSON.
+					callback_data: button.payload
+						? `${button.event}|${index}`
+						: button.event,
+				},
 			]),
 		};
 	}
