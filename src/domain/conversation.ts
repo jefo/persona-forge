@@ -1,6 +1,10 @@
 import type { BotPersona } from "./bot-persona";
 import { Form, FormError } from "./form";
-import type { TransitionDefinition } from "./fsm";
+import type {
+	AssignExpression,
+	ConditionDefinition,
+	TransitionDefinition,
+} from "./fsm";
 import type { ViewNode } from "./view-map";
 
 export type ConversationStatus = "active" | "finished" | "cancelled";
@@ -21,31 +25,96 @@ export type ProcessResult =
 	  }
 	| { ok: false; reason: string };
 
-function resolveExpression(
-	expression: string | number | boolean,
+function isAddOperation(
+	expression: AssignExpression,
+): expression is { op: "add"; value: AssignExpression } {
+	return (
+		typeof expression === "object" &&
+		expression !== null &&
+		!Array.isArray(expression) &&
+		(expression as Record<string, unknown>).op === "add" &&
+		"value" in expression
+	);
+}
+
+function resolveValue(
+	expression: AssignExpression,
 	payload: Record<string, unknown>,
 	form: Form,
 ): unknown {
 	if (typeof expression !== "string") return expression;
 
 	if (expression.startsWith("payload.")) {
-		const key = expression.slice("payload.".length);
-		if (!Object.prototype.hasOwnProperty.call(payload, key)) {
-			throw new FormError(`Payload field '${key}' is required.`);
+		const path = expression.slice("payload.".length);
+		let current: unknown = payload;
+		for (const segment of path.split(".")) {
+			if (current === null || current === undefined || typeof current !== "object") {
+				throw new FormError(`Payload field '${path}' is required.`);
+			}
+			current = (current as Record<string, unknown>)[segment];
 		}
-		return payload[key];
+		if (current === undefined) {
+			throw new FormError(`Payload field '${path}' is required.`);
+		}
+		return current;
 	}
 
 	if (expression.startsWith("form.")) {
-		const key = expression.slice("form.".length);
-		const value = form.get(key);
+		const path = expression.slice("form.".length);
+		const value = form.getPath(path);
 		if (value === undefined) {
-			throw new FormError(`Form field '${key}' is empty.`);
+			throw new FormError(`Form field '${path}' is empty.`);
 		}
 		return value;
 	}
 
 	return expression;
+}
+
+function equalValues(left: unknown, right: unknown): boolean {
+	if (Array.isArray(left) && Array.isArray(right)) {
+		return left.length === right.length && left.every((item, index) => item === right[index]);
+	}
+	if (
+		typeof left === "object" &&
+		left !== null &&
+		typeof right === "object" &&
+		right !== null
+	) {
+		return JSON.stringify(left) === JSON.stringify(right);
+	}
+	return left === right;
+}
+
+function conditionMet(condition: ConditionDefinition, form: Form): boolean {
+	const actual = form.getPath(condition.field);
+
+	switch (condition.operator) {
+		case "equals":
+			return equalValues(actual, condition.value);
+		case "not_equals":
+			return !equalValues(actual, condition.value);
+		case "contains":
+			if (Array.isArray(actual)) return actual.includes(condition.value);
+			if (typeof actual === "string") return actual.includes(String(condition.value));
+			return false;
+	}
+}
+
+function applyAssign(
+	key: string,
+	expression: AssignExpression,
+	payload: Record<string, unknown>,
+	form: Form,
+): unknown {
+	if (isAddOperation(expression)) {
+		const value = resolveValue(expression.value, payload, form);
+		const current = form.get(key);
+		const items = Array.isArray(current) ? current : [];
+		return [...items, value];
+	}
+
+	return resolveValue(expression, payload, form);
 }
 
 /**
@@ -135,11 +204,22 @@ export class Conversation {
 			return { ok: false, reason: `Conversation is ${this._status}.` };
 		}
 
-		const transition = persona.fsm.findTransition(this._currentStateId, event);
-		if (!transition) {
+		const candidates = persona.fsm.findTransitions(this._currentStateId, event);
+		if (candidates.length === 0) {
 			return {
 				ok: false,
 				reason: `Unknown event '${event}' in state '${this._currentStateId}'.`,
+			};
+		}
+
+		const transition = candidates.find(
+			(candidate) => !candidate.cond || conditionMet(candidate.cond, this._form),
+		);
+
+		if (!transition) {
+			return {
+				ok: false,
+				reason: `Conditions for event '${event}' are not met in state '${this._currentStateId}'.`,
 			};
 		}
 
@@ -149,7 +229,10 @@ export class Conversation {
 
 		try {
 			for (const [key, expression] of Object.entries(transition.assign ?? {})) {
-				nextForm.set(key, resolveExpression(expression, payload, this._form));
+				nextForm.set(
+					key,
+					applyAssign(key, expression, payload, this._form),
+				);
 			}
 		} catch (error) {
 			const reason = error instanceof Error ? error.message : String(error);

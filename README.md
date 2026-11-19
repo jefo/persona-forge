@@ -5,10 +5,12 @@
 [![Bun](https://img.shields.io/badge/Bun-1.2%2B-000000?logo=bun&logoColor=white)](#запуск)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](#как-устроено)
 [![Zod](https://img.shields.io/badge/Zod-4.x-3E67B1)](#инварианты)
-[![Tests](https://img.shields.io/badge/tests-47%20passing-brightgreen)](#тесты)
+[![Tests](https://img.shields.io/badge/tests-52%20passing-brightgreen)](#тесты)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **[Открыть case study →](https://jefo.github.io/persona-forge/)**
+
+Рабочее приложение на движке — **[JTBD Lead Qualifier](https://github.com/jefo/jtbd-lead-qualifier)**: квалификация лидов, мультивыбор, условный пре-оффер и карточка лида.
 
 <img src="docs/screens/persona-forge/03.png" alt="Экран подтверждения записи в PersonaForge" width="360" />
 
@@ -78,7 +80,10 @@ export const appointmentBot = {
 ## Что умеет
 
 - Переходы по событиям с `assign` из payload, формы или литерала.
-- Типизированная форма: `string`, `number`, `boolean`, defaults, required.
+- Мультивыбор через `{ op: "add" }` и условные переходы (`cond`).
+- Типизированная форма: `string`, `number`, `boolean`, `array`, `object`.
+- Вложенные шаблоны вроде `{{estimate.price}}`.
+- Кнопки с payload и inline-клавиатура Telegram.
 - Сброс формы на переходе (`resetForm`).
 - Автоматическое завершение диалога в состоянии без переходов.
 - История переходов с временем.
@@ -86,7 +91,7 @@ export const appointmentBot = {
 - Telegram-payload с inline-клавиатурой.
 - In-memory репозитории и подменяемые порты.
 - CLI-демо записи на приём.
-- **47 тестов**, **111 expect**.
+- **52 теста**, **123 expect**.
 
 ---
 
@@ -180,9 +185,9 @@ definition
 ## Тесты
 
 ```text
-47 pass
+52 pass
 0 fail
-111 expect() calls
+123 expect() calls
 ```
 
 Покрыто:
@@ -206,6 +211,7 @@ definition
 - **In-memory хранилище.** Диалоги и определения теряются при перезапуске.
 - **Типы формы — runtime.** `type: "string"` проверяется в рантайме, а не компилятором.
 - **Только текст и кнопки.** Нет фото, файлов, геолокации и других компонентов.
+- **Условия простые.** `equals`, `not_equals`, `contains` — без выражений и вложенной логики.
 - **Один активный диалог на чат.** Без блокировок и конкурентности.
 - **Нет локализации.** Тексты лежат в определениях на одном языке.
 - **Нет аналитики.** Воронка и конверсия не собираются.

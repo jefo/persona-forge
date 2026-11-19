@@ -1,9 +1,17 @@
 import { z } from "zod";
 
+const ScalarSchema = z.union([z.string(), z.number(), z.boolean()]);
+const ValueSchema = z.union([
+	ScalarSchema,
+	z.array(z.string()),
+	z.record(z.string(), z.unknown()),
+]);
+
 export const FieldSchema = z.object({
-	type: z.enum(["string", "number", "boolean"]),
+	type: z.enum(["string", "number", "boolean", "array", "object"]),
+	items: z.enum(["string"]).optional(),
 	required: z.boolean().optional(),
-	default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+	default: ValueSchema.optional(),
 });
 
 export const FormDefinitionSchema = z.object({
@@ -12,7 +20,12 @@ export const FormDefinitionSchema = z.object({
 
 export type FieldDefinition = z.infer<typeof FieldSchema>;
 export type FormDefinition = z.infer<typeof FormDefinitionSchema>;
-export type FormValue = string | number | boolean;
+export type FormValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| Record<string, unknown>;
 
 export class FormError extends Error {
 	constructor(message: string) {
@@ -21,15 +34,52 @@ export class FormError extends Error {
 	}
 }
 
-function assertType(field: string, definition: FieldDefinition, value: unknown): FormValue {
+function cloneValue(value: FormValue): FormValue {
+	if (Array.isArray(value)) return [...value];
+	if (typeof value === "object" && value !== null) return { ...value };
+	return value;
+}
+
+function describe(value: unknown): string {
+	if (Array.isArray(value)) return "array";
+	if (value === null) return "null";
+	return typeof value;
+}
+
+function assertType(
+	field: string,
+	definition: FieldDefinition,
+	value: unknown,
+): FormValue {
 	if (definition.type === "string" && typeof value === "string") return value;
-	if (definition.type === "number" && typeof value === "number" && Number.isFinite(value)) {
+	if (
+		definition.type === "number" &&
+		typeof value === "number" &&
+		Number.isFinite(value)
+	) {
 		return value;
 	}
 	if (definition.type === "boolean" && typeof value === "boolean") return value;
 
+	if (definition.type === "array") {
+		if (!Array.isArray(value)) {
+			throw new FormError(`Form field '${field}' expects array, got ${describe(value)}.`);
+		}
+		if (definition.items === "string" && !value.every((item) => typeof item === "string")) {
+			throw new FormError(`Form field '${field}' expects an array of strings.`);
+		}
+		return [...value];
+	}
+
+	if (definition.type === "object") {
+		if (typeof value !== "object" || value === null || Array.isArray(value)) {
+			throw new FormError(`Form field '${field}' expects object, got ${describe(value)}.`);
+		}
+		return { ...(value as Record<string, unknown>) };
+	}
+
 	throw new FormError(
-		`Form field '${field}' expects ${definition.type}, got ${typeof value}.`,
+		`Form field '${field}' expects ${definition.type}, got ${describe(value)}.`,
 	);
 }
 
@@ -71,6 +121,25 @@ export class Form {
 		return this.values[key];
 	}
 
+	/** Reads "estimate.price" or "job.0" from the form. */
+	getPath(path: string): unknown {
+		let current: unknown = this.values;
+
+		for (const segment of path.split(".")) {
+			if (current === null || current === undefined) return undefined;
+			if (Array.isArray(current)) {
+				const index = Number(segment);
+				current = Number.isInteger(index) ? current[index] : undefined;
+			} else if (typeof current === "object") {
+				current = (current as Record<string, unknown>)[segment];
+			} else {
+				return undefined;
+			}
+		}
+
+		return current;
+	}
+
 	has(key: string): boolean {
 		return this.values[key] !== undefined;
 	}
@@ -82,7 +151,11 @@ export class Form {
 	}
 
 	toJSON(): Readonly<Record<string, FormValue>> {
-		return { ...this.values };
+		const copy: Record<string, FormValue> = {};
+		for (const [key, value] of Object.entries(this.values)) {
+			copy[key] = cloneValue(value);
+		}
+		return copy;
 	}
 
 	clone(): Form {

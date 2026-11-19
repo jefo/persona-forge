@@ -4,6 +4,7 @@ import type { Form } from "../domain/form";
 export interface RenderedButton {
 	label: string;
 	event: string;
+	payload?: Record<string, unknown>;
 }
 
 export interface RenderedMessage {
@@ -12,12 +13,18 @@ export interface RenderedMessage {
 	buttons: RenderedButton[];
 }
 
-const TEMPLATE = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+const TEMPLATE = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
+
+function format(value: unknown): string {
+	if (value === undefined || value === null) return "—";
+	if (Array.isArray(value)) return value.join(", ");
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+}
 
 function fillTemplate(text: string, form: Form): string {
-	return text.replace(TEMPLATE, (_match, field: string) => {
-		const value = form.get(field);
-		return value === undefined ? "—" : String(value);
+	return text.replace(TEMPLATE, (_match, path: string) => {
+		return format(form.getPath(path));
 	});
 }
 
@@ -42,6 +49,7 @@ export function renderMessage(
 		buttons: (node.props.buttons ?? []).map((button) => ({
 			label: button.label,
 			event: button.event,
+			...(button.payload ? { payload: button.payload } : {}),
 		})),
 	};
 }

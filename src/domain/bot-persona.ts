@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Fsm, FsmDefinitionSchema } from "./fsm";
 import { Form, FormDefinitionSchema } from "./form";
 import { ViewMap, ViewMapDefinitionSchema } from "./view-map";
+import type { AssignExpression } from "./fsm";
 
 export const BotPersonaDefinitionSchema = z.object({
 	name: z.string().min(1),
@@ -12,10 +13,67 @@ export const BotPersonaDefinitionSchema = z.object({
 
 export type BotPersonaDefinition = z.infer<typeof BotPersonaDefinitionSchema>;
 
-const TEMPLATE = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+const TEMPLATE = /\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g;
 
 function templateFields(text: string): string[] {
 	return [...text.matchAll(TEMPLATE)].map((match) => match[1] as string);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function actualType(value: unknown): string {
+	if (Array.isArray(value)) return "array";
+	if (isRecord(value)) return "object";
+	if (typeof value === "number") return "number";
+	if (typeof value === "boolean") return "boolean";
+	return "string";
+}
+
+function checkAssign(
+	stateId: string,
+	event: string,
+	key: string,
+	expression: AssignExpression,
+	fieldType: string,
+	fieldNames: Set<string>,
+): void {
+	const fail = (message: string) => {
+		throw new Error(
+			`BotPersona invariant failed: transition '${event}' from '${stateId}' ${message}.`,
+		);
+	};
+
+	if (typeof expression === "string") {
+		if (expression.startsWith("payload.")) return;
+		if (expression.startsWith("form.")) {
+			const source = expression.slice("form.".length).split(".")[0] as string;
+			if (!fieldNames.has(source)) {
+				fail(`reads unknown form field '${source}'`);
+			}
+			return;
+		}
+	}
+
+	if (isRecord(expression) && expression.op === "add") {
+		if (fieldType !== "array") {
+			fail(`adds to non-array field '${key}'`);
+		}
+		const value = expression.value;
+		if (typeof value === "string" && (value.startsWith("payload.") || value.startsWith("form."))) {
+			return;
+		}
+		if (typeof value !== "string") {
+			fail(`adds a non-string value to '${key}'`);
+		}
+		return;
+	}
+
+	const type = actualType(expression);
+	if (fieldType !== type) {
+		fail(`assigns ${type} to ${fieldType} field '${key}'`);
+	}
 }
 
 /**
@@ -60,16 +118,17 @@ export class BotPersona {
 			const node = viewMap.getNode(nodeId);
 			if (!node) continue;
 
-			for (const field of templateFields(node.props.text)) {
+			for (const path of templateFields(node.props.text)) {
+				const field = path.split(".")[0] as string;
 				if (!fieldNames.has(field)) {
 					throw new Error(
-						`BotPersona invariant failed: template '{{${field}}}' in state '${nodeId}' is not a form field.`,
+						`BotPersona invariant failed: template '{{${path}}}' in state '${nodeId}' is not a form field.`,
 					);
 				}
 			}
 
 			for (const button of node.props.buttons ?? []) {
-				if (!fsm.findTransition(nodeId, button.event)) {
+				if (fsm.findTransitions(nodeId, button.event).length === 0) {
 					throw new Error(
 						`BotPersona invariant failed: button '${button.label}' in state '${nodeId}' sends unknown event '${button.event}'.`,
 					);
@@ -79,40 +138,30 @@ export class BotPersona {
 
 		for (const state of fsm.statesById.values()) {
 			for (const transition of state.on) {
+				if (transition.cond) {
+					if (!fieldNames.has(transition.cond.field.split(".")[0] as string)) {
+						throw new Error(
+							`BotPersona invariant failed: transition '${transition.event}' from '${state.id}' checks unknown form field '${transition.cond.field}'.`,
+						);
+					}
+				}
+
 				for (const [key, expression] of Object.entries(transition.assign ?? {})) {
 					const field = form.fields[key];
 					if (!field) {
 						throw new Error(
-							`BotPersona invariant failed: transition '${transition.event}' assigns unknown form field '${key}'.`,
+							`BotPersona invariant failed: transition '${transition.event}' from '${state.id}' assigns unknown form field '${key}'.`,
 						);
 					}
 
-					if (typeof expression === "string" && expression.startsWith("form.")) {
-						const source = expression.slice("form.".length);
-						if (!fieldNames.has(source)) {
-							throw new Error(
-								`BotPersona invariant failed: transition '${transition.event}' reads unknown form field '${source}'.`,
-							);
-						}
-					}
-
-					if (
-						typeof expression !== "string" ||
-						(!expression.startsWith("payload.") && !expression.startsWith("form."))
-					) {
-						const expected = field.type;
-						const actual =
-							typeof expression === "number"
-								? "number"
-								: typeof expression === "boolean"
-									? "boolean"
-									: "string";
-						if (expected !== actual) {
-							throw new Error(
-								`BotPersona invariant failed: transition '${transition.event}' assigns ${actual} to ${expected} field '${key}'.`,
-							);
-						}
-					}
+					checkAssign(
+						state.id,
+						transition.event,
+						key,
+						expression,
+						field.type,
+						fieldNames,
+					);
 				}
 			}
 		}

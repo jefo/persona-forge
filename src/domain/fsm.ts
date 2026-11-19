@@ -7,12 +7,25 @@ import { z } from "zod";
  *   - "form.service" copies a value that is already in the form;
  *   - anything else is a literal.
  */
+export const AssignExpressionSchema = z.union([
+	z.string(),
+	z.number(),
+	z.boolean(),
+	z.array(z.string()),
+	z.record(z.string(), z.unknown()),
+]);
+
+export const ConditionSchema = z.object({
+	field: z.string().min(1),
+	operator: z.enum(["equals", "not_equals", "contains"]),
+	value: z.unknown(),
+});
+
 export const TransitionSchema = z.object({
 	event: z.string().min(1),
 	target: z.string().min(1),
-	assign: z
-		.record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-		.optional(),
+	assign: z.record(z.string(), AssignExpressionSchema).optional(),
+	cond: ConditionSchema.optional(),
 	resetForm: z.boolean().optional(),
 });
 
@@ -26,6 +39,8 @@ export const FsmDefinitionSchema = z.object({
 	states: z.array(StateSchema).min(1),
 });
 
+export type AssignExpression = z.infer<typeof AssignExpressionSchema>;
+export type ConditionDefinition = z.infer<typeof ConditionSchema>;
 export type TransitionDefinition = z.infer<typeof TransitionSchema>;
 export type StateDefinition = z.infer<typeof StateSchema>;
 export type FsmDefinition = z.infer<typeof FsmDefinitionSchema>;
@@ -65,10 +80,14 @@ export class Fsm {
 		}
 	}
 
-	findTransition(fromStateId: string, event: string): TransitionDefinition | null {
+	findTransitions(fromStateId: string, event: string): TransitionDefinition[] {
 		const state = this.states.get(fromStateId);
-		if (!state) return null;
-		return state.on.find((transition) => transition.event === event) ?? null;
+		if (!state) return [];
+		return state.on.filter((transition) => transition.event === event);
+	}
+
+	findTransition(fromStateId: string, event: string): TransitionDefinition | null {
+		return this.findTransitions(fromStateId, event)[0] ?? null;
 	}
 
 	getState(stateId: string): StateDefinition | undefined {

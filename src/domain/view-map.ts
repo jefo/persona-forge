@@ -3,6 +3,7 @@ import { z } from "zod";
 export const ButtonSchema = z.object({
 	label: z.string().min(1),
 	event: z.string().min(1),
+	payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const ViewNodeSchema = z.object({
